@@ -9,3 +9,7 @@ flowchart TD
     D --> E(Stored in a SQLite database)
 
 ```
+
+
+## AI use policy
+The use of AI in this project is minimal, the only things we have used AI is to write repetetive cases for test benches or for searching things, the code for design sources is completely written by hand.
