@@ -11,7 +11,7 @@
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = with pkgs; [ git iverilog gtkwave ];
+  packages = with pkgs; [ git iverilog gtkwave cargo rustc ];
 
   # https://devenv.sh/languages/
   # languages.rust.enable = true;

@@ -8,3 +8,9 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+# rust binaries
+*/target
+
+#Compiled code for verilog
+*a.out
