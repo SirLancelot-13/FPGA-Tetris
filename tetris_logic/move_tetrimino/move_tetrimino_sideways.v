@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "constants.vh"
+`include "../constants.vh"
 
 module move_tetrimino_sideways(
     input signed [31:0] dx, // Difference in x, should be -1, 0 or 1

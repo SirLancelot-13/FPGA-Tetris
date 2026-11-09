@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "constants.vh"
+`include "../constants.vh"
 
 module move_tetrimino_down(
     input move_down,
