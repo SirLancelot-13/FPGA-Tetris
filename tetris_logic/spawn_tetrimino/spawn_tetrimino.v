@@ -30,11 +30,7 @@ always @(posedge game_clk) begin
     changed_game_state <= game_state;
     out_central_x_x2 <= in_central_x_x2;
     out_central_y_x2 <= in_central_y_x2;
-    for (i = 0; i < `BOARD_HEIGHT; i = i + 1) begin
-        for (j = 0; j < `BOARD_WIDTH; j = j + 1) begin
-            output_grid[2*(i*`BOARD_WIDTH+j) +: 2] <= input_grid[2*(i*`BOARD_WIDTH+j) +: 2];
-        end
-    end
+    output_grid <= input_grid;
 
     // Implement the tetrimino bag for more even spawning
     if (game_state == `SPAWN_STATE) begin
