@@ -62,6 +62,12 @@ tetrimino_gravity tetrimino_gravity (
 	.changed_game_state(mv_game_state)
 );
 
+wire tx_start, tx_done;
+wire [7:0] tx_data;
+
+packetizer packetizer (.clk(clk), .game_over(game_state == `GAMEOVER_STATE), .score(score), .grid(grid), .tx_line(out), .tx_done(tx_done), .tx_start(tx_start), .tx_data(tx_data));
+uart_tx uart_tx (.clk(clk), .tx_start(tx_start), .tx_data(tx_data), .tx_line(out), .tx_done(tx_done));
+
 // Main owns the state, it takes the module outputs once after each game_clk edge
 always @(posedge clk) begin
     gc <= game_clk; gc2 <= gc;

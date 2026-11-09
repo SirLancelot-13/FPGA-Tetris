@@ -26,7 +26,7 @@ use ratatui::crossterm::{
 struct GameState {
     game_over : bool,
     score: u16,
-    board_state: [u8; 100]
+    board_state: [u8; 120]
 }
 
 struct Packet{
@@ -57,7 +57,7 @@ impl GameState {
         Self {
             game_over : false,
             score: 0,
-            board_state: [0u8; 100]
+            board_state: [0u8; 120]
         }
     }
 }
@@ -76,10 +76,10 @@ impl Packet {
         if self.data.len()!=PACKET_LENGTH as usize||!self.check_magic(){return (2, 0, &[])}
         let game_over = self.data[2] as u8;
         let score = u16::from_be_bytes([self.data[3],self.data[4]]);
-        let game_board = &self.data[5..105];
-        let checksum = ((self.data[105] as u16)<<8)+(self.data[106] as u16);
+        let game_board = &self.data[5..35];
+        let checksum = ((self.data[35] as u16)<<8)+(self.data[36] as u16);
 
-        if (checksum == crc(&self.data[2..105],0xFFFF)){
+        if (checksum == crc(&self.data[2..35],0xFFFF)){
             return (game_over, score, game_board)
         }
         return (2, 0, &[])
@@ -102,11 +102,11 @@ impl Packet {
 
 
 
-fn render_board(board: &[u8; 100]) -> Table<'static> {
+fn render_board(board: &[u8; 120]) -> Table<'static> {
     let temp_board = board;
-    let rows = (0..10).map(|y| {
+    let rows = (0..12).map(|y| {
         let cells = (0..10).map(|x| {
-            let occupied = temp_board[y * 10 + x] != 0;
+            let occupied = temp_board[(11 - y) * 10 + x] != 0;
 
             if occupied {
                 Cell::from("  ").style(
@@ -131,13 +131,13 @@ fn render_board(board: &[u8; 100]) -> Table<'static> {
 fn main() -> Result<(), Box<dyn Error>> {
     let mut t = ratatui::init();
     let mut p = Packet::initialize();
-    let mut board = [0u8; 100];
+    let mut board = [0u8; 120];
     loop {
         if let Err(e) = p.serialize() { ratatui::restore(); return Err(e) }
-        while p.data.len() >= 107 {
-            let rest = p.data.split_off(107);
+        while p.data.len() >= 37 {
+            let rest = p.data.split_off(37);
             let (o, _, b) = p.check_packet();
-            if o < 2 { board.copy_from_slice(b); p.data.clear(); } else { p.data.remove(0); }
+            if o < 2 { for k in 0..120 { board[k] = b[k / 4] >> 2 * (k % 4) & 3 } p.data.clear(); } else { p.data.remove(0); }
             p.data.extend(rest);
         }
         t.draw(|f| f.render_widget(render_board(&board), f.area())).ok();
