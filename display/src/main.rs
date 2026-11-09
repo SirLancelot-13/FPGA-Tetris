@@ -33,7 +33,6 @@ struct Packet{
     data: Vec<u8>
 }
 
-//TODO: Add magic value here
 const MAGIC: [u8; 2] = [0xA5,0x5A];
 const PACKET_LENGTH : u8 = 107;
 const CRC_POLYNOMIAL: u16 = 0x1021;
@@ -127,6 +126,25 @@ fn render_board(board: &[u8; 100]) -> Table<'static> {
         .style(Style::default().bg(Color::Black))
 }
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut t = ratatui::init();
+    let mut p = Packet::initialize();
+    let mut board = [0u8; 100];
+    loop {
+        if let Err(e) = p.serialize() { ratatui::restore(); return Err(e) }
+        while p.data.len() >= 107 {
+            let rest = p.data.split_off(107);
+            let (o, _, b) = p.check_packet();
+            if o < 2 { board.copy_from_slice(b); p.data.clear(); } else { p.data.remove(0); }
+            p.data.extend(rest);
+        }
+        t.draw(|f| f.render_widget(render_board(&board), f.area())).ok();
+        if event::poll(Duration::ZERO)? {
+            if let Event::Key(k) = event::read()? {
+                if k.code == KeyCode::Char('q') { break }
+            }
+        }
+    }
+    ratatui::restore();
+    Ok(())
 }
