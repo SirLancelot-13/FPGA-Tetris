@@ -7,8 +7,9 @@
 `define SPAWN_STATE 2'b00
 `define MOVE_STATE 2'b01
 
-`define EMPTY_BLOCK 1'b0
-`define TETRIMINO_BLOCK 1'b1
+`define EMPTY_BLOCK 2'b00
+`define DEAD_TETRIMINO_BLOCK 2'b01
+`define ACTIVE_TETRIMINO_BLOCK 2'b10
 
 `define IID 3'b000
 `define JID 3'b001

@@ -11,19 +11,19 @@ reg clk = 0;
 wire game_clk;
 
 // Board state
-reg [`BOARD_HEIGHT*`BOARD_WIDTH-1:0] grid = `EMPTY_BLOCK;
+reg [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] grid = `EMPTY_BLOCK;
 reg [1:0] game_state = `SPAWN_STATE;
 reg [7:0] cx2 = 0; // Double of central coordinates (can't use floats)
 reg [7:0] cy2 = 0;
 
 // spawn outputs
-wire [`BOARD_HEIGHT*`BOARD_WIDTH-1:0] sp_grid;
+wire [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] sp_grid;
 wire [1:0] sp_game_state;
 wire [7:0] sp_cx2;
 wire [7:0] sp_cy2;
 
 // move outputs
-wire [`BOARD_HEIGHT*`BOARD_WIDTH-1:0] mv_grid;
+wire [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] mv_grid;
 wire [1:0] mv_game_state;
 wire [7:0] mv_cx2;
 wire [7:0] mv_cy2;
