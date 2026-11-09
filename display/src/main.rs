@@ -88,8 +88,7 @@ impl Packet {
     fn parse_packet(&self) -> ([u8;1000],u16){
         return ([0u8;1000], 0);
     }
-    fn serialize(&mut self)->Result<(),Box<dyn Error>>{
-        let mut port = serialport::new("/dev/ttyUSB0", 115_200).timeout(Duration::from_millis(100)).open()?;
+    fn serialize(&mut self, port: &mut dyn serialport::SerialPort)->Result<(),Box<dyn Error>>{
         let mut b=[0u8;256];
         let ret_val = match port.read(&mut b) {
             Ok(n)  => { self.data.extend_from_slice(&b[..n]) }
@@ -129,19 +128,46 @@ fn render_board(board: &[u8; 120]) -> Table<'static> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut t = ratatui::init();
-    let mut p = Packet::initialize();
-    let mut board = [0u8; 120];
-    loop {
-        if let Err(e) = p.serialize() { ratatui::restore(); return Err(e) }
-        while p.data.len() >= 37 {
-            let rest = p.data.split_off(37);
-            let (o, _, b) = p.check_packet();
-            if o < 2 { for k in 0..120 { board[k] = b[k / 4] >> 2 * (k % 4) & 3 } p.data.clear(); } else { p.data.remove(0); }
-            p.data.extend(rest);
+    let db = rusqlite::Connection::open("scores.db")?;
+    db.execute("CREATE TABLE IF NOT EXISTS scores (id INTEGER PRIMARY KEY, score INTEGER, at DATETIME DEFAULT CURRENT_TIMESTAMP)", ())?;
+    let (tx, rx) = mpsc::channel::<Result<GameState, String>>();
+    thread::spawn(move || {
+        let mut p = Packet::initialize();
+        let mut port = match serialport::new("/dev/ttyUSB0", 115_200).timeout(Duration::from_millis(100)).open() {
+            Ok(x) => x,
+            Err(e) => { tx.send(Err(e.to_string())).ok(); return }
+        };
+        loop {
+            if let Err(e) = p.serialize(&mut *port) { tx.send(Err(e.to_string())).ok(); return }
+            while p.data.len() >= 37 {
+                let rest = p.data.split_off(37);
+                let (o, s, b) = p.check_packet();
+                if o < 2 {
+                    let mut g = GameState::new();
+                    g.game_over = o == 1;
+                    g.score = s;
+                    for k in 0..120 { g.board_state[k] = b[k / 4] >> 2 * (k % 4) & 3 }
+                    if tx.send(Ok(g)).is_err() { return }
+                    p.data.clear();
+                } else { p.data.remove(0); }
+                p.data.extend(rest);
+            }
         }
-        t.draw(|f| f.render_widget(render_board(&board), f.area())).ok();
-        if event::poll(Duration::ZERO)? {
+    });
+    let mut t = ratatui::init();
+    let mut g = GameState::new();
+    loop {
+        while let Ok(m) = rx.try_recv() {
+            match m {
+                Ok(n) => {
+                    if n.game_over && !g.game_over { db.execute("INSERT INTO scores (score) VALUES (?1)", [n.score]).unwrap(); }
+                    g = n;
+                }
+                Err(e) => { ratatui::restore(); return Err(e.into()) }
+            }
+        }
+        t.draw(|f| f.render_widget(render_board(&g.board_state), f.area())).ok();
+        if event::poll(Duration::from_millis(50))? {
             if let Event::Key(k) = event::read()? {
                 if k.code == KeyCode::Char('q') { break }
             }

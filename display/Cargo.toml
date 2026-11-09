@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 ratatui = "0.30.2"
 ratatui-widgets = "0.3.2"
+rusqlite = { version = "0.41.1", features = ["bundled"] }
 serialport = "4.10.1"
