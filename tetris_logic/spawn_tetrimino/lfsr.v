@@ -4,7 +4,7 @@
 
 module lfsr(
     input clk,
-    output reg [2:0] random_number
+    output reg [2:0] random_number = 0
 );
 
 reg [7:0] number = 8'b0100101;

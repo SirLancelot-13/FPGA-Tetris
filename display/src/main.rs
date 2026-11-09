@@ -34,8 +34,10 @@ struct Packet{
 }
 
 const MAGIC: [u8; 2] = [0xA5,0x5A];
-const PACKET_LENGTH : u8 = 107;
+const PACKET_LENGTH : u8 = 37;
 const CRC_POLYNOMIAL: u16 = 0x1021;
+const BOARD_HEIGHT: u8 = 12;
+const BOARD_WIDTH: u8 = 10;
 
 //CRC-16 to check if the packet is corrupted or not.
 fn crc(data: &[u8], init: u16) -> u16 {

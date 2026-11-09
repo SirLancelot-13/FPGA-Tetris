@@ -25,6 +25,7 @@ lfsr lfsr (
 );
 
 integer i, j;
+reg over;
 always @(posedge game_clk) begin
     // Default values
     changed_game_state <= game_state;
@@ -39,7 +40,10 @@ always @(posedge game_clk) begin
                 grid[i][j] = input_grid[2*(i*`BOARD_WIDTH+j) +: 2];
             end
         end
-        
+        over = 0;
+        for (j = 0; j < `BOARD_WIDTH; j = j + 1)
+            if (grid[`BOARD_HEIGHT-1][j] == `DEAD_TETRIMINO_BLOCK || grid[`BOARD_HEIGHT-2][j] == `DEAD_TETRIMINO_BLOCK) over = 1;
+
         case (tetrimino_id)
             `IID : begin
                 out_central_y_x2 <= `BOARD_HEIGHT * 2 - 5;
@@ -108,7 +112,7 @@ always @(posedge game_clk) begin
             end
         end
 
-        changed_game_state <= `MOVE_STATE;
+        changed_game_state <= over ? `GAMEOVER_STATE : `MOVE_STATE;
     end
 end
 
