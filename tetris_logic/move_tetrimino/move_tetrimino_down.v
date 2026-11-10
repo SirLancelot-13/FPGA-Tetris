@@ -4,7 +4,6 @@
 
 module move_tetrimino_down(
     input move_down,
-    input [1:0] game_state,
     input clk,
     input [7:0] in_central_x_x2,
     input [7:0] in_central_y_x2,
@@ -24,7 +23,7 @@ always @(posedge clk) begin
     out_central_y_x2 <= in_central_y_x2;
     output_grid <= input_grid;
     
-    if (game_state == `MOVE_STATE && move_down == 1) begin
+    if (move_down == 1) begin
         for (i = 0; i < `BOARD_HEIGHT; i = i + 1) begin
             for (j = 0; j < `BOARD_WIDTH; j = j + 1) begin
                 grid[i][j] = input_grid[2*(i*`BOARD_WIDTH+j) +: 2];
