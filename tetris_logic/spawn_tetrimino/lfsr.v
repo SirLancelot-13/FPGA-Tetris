@@ -10,7 +10,7 @@ module lfsr(
 reg [7:0] number = 8'b0100101;
 
 always @(posedge clk) begin
-    number = { number[0] ^ number[2] ^ number[3] ^ number[4], number[7:1] };
+    number <= { number[0] ^ number[2] ^ number[3] ^ number[4], number[7:1] };
     random_number <= number[2:0];
 
     // Make better later to unbiased
