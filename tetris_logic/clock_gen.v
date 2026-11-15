@@ -1,33 +1,23 @@
 `timescale 1ns/1ps
 
+`include "constants.vh"
+
 module clock_gen(
-    input enable,
-    output reg clk
+    input clk,
+    output reg game_clk = 0
 );
-    parameter FREQ = 1000; // in MHZ
-    parameter DUTY = 50; // in percentage (how much the clock stays on)
 
-    parameter real clk_period = 1.0 / (FREQ * 1e6) * 1e9; 	// convert to ns
-    real clk_on = DUTY / 100.0 * clk_period;
-    real clk_off = (100.0 - DUTY) / 100.0 * clk_period;
+// Values are setup to give clock period (20 ns in this case to do 1 -> 0 -> 1)
+wire [31:0] half_period = `CLOCK_FREQUENCY * 1000000 / 2; // in Hz
 
-    initial begin
-        $display("FREQ      = %0d MHz", FREQ);
-        $display("DUTY      = %0d %%",  DUTY);
-        $display("PERIOD    = %0.3f ns", clk_period);
-        $display("CLK_ON    = %0.3f ns", clk_on);
-        $display("CLK_OFF   = %0.3f ns", clk_off);
+reg [31:0] counter = 0;
+always @(posedge clk) begin
+    if (counter == half_period - 1) begin
+        counter <= 0;
+        game_clk <= ~game_clk;
+    end else begin
+        counter <= counter + 1;
     end
+end
 
-    // Initialize variables to zero
-    initial begin
-        clk = 0;
-    end
-
-    always @(posedge enable) begin
-        while (enable) begin
-            clk = 1; #(clk_on);
-            clk = 0; #(clk_off);
-        end
-    end
 endmodule

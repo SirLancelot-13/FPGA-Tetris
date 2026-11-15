@@ -1,6 +1,8 @@
 `ifndef CONSTANTS_VH
 `define CONSTANTS_VH
 
+`define CLOCK_FREQUENCY 50 // MHz
+
 `define BOARD_WIDTH 10
 `define BOARD_HEIGHT 12 // 2 extra layers for spawning tetriminos
 
