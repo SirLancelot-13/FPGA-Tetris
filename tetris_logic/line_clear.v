@@ -4,10 +4,12 @@
 
 module line_clear(
     input [1:0] game_state,
+    input [15:0] score,
     input clk,
     input [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] input_grid,
     output reg [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] output_grid,
-    output reg [1:0] changed_game_state
+    output reg [1:0] changed_game_state,
+    output reg [15:0] changed_score
 );
 
 reg [1:0] grid [0:`BOARD_HEIGHT-1][0:`BOARD_WIDTH-1];
@@ -18,6 +20,7 @@ always @(posedge clk) begin
     // Default values
     output_grid <= input_grid;
     changed_game_state <= game_state;
+    changed_score <= score;
 
     if (game_state == `CLEAR_STATE) begin
         for (i = 0; i < `BOARD_HEIGHT; i = i + 1) begin
@@ -51,6 +54,15 @@ always @(posedge clk) begin
         end
 
         changed_game_state <= `SPAWN_STATE;
+        if (push_down == 1) begin
+            changed_score <= score + 100;
+        end else if (push_down == 2) begin
+            changed_score <= score + 250;
+        end else if (push_down == 3) begin
+            changed_score <= score + 400;
+        end else if (push_down == 4) begin
+            changed_score <= score + 600;
+        end
 
         for (i = 0; i < `BOARD_HEIGHT; i = i + 1) begin
             for (j = 0; j < `BOARD_WIDTH; j = j + 1) begin
