@@ -4,7 +4,6 @@
 
 module move_tetrimino_down(
     input move_down,
-    input clk,
     input [7:0] in_central_x_x2,
     input [7:0] in_central_y_x2,
     input [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] input_grid,
@@ -17,7 +16,7 @@ reg [1:0] grid [0:`BOARD_HEIGHT-1][0:`BOARD_WIDTH-1];
 
 integer i, j;
 reg should_fall = 1;
-always @(posedge clk) begin
+always @(*) begin
     // Default values
     out_central_x_x2 <= in_central_x_x2;
     out_central_y_x2 <= in_central_y_x2;

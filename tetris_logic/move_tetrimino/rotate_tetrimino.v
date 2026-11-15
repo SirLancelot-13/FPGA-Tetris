@@ -4,7 +4,6 @@
 
 module rotate_tetrimino(
     input rotate,
-    input clk,
     input [7:0] in_central_x_x2,
     input [7:0] in_central_y_x2,
     input [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] input_grid,
@@ -44,7 +43,7 @@ reg [7:0] j;
 reg can_rotate = 1;
 reg [7:0] out_x;
 reg [7:0] out_y;
-always @(posedge clk) begin
+always @(*) begin
     // Default values
     output_grid <= input_grid;
     
