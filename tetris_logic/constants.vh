@@ -6,7 +6,8 @@
 
 `define SPAWN_STATE 2'b00
 `define MOVE_STATE 2'b01
-`define GAMEOVER_STATE 2'b10
+`define CLEAR_STATE 2'b10
+`define GAMEOVER_STATE 2'b11
 
 `define EMPTY_BLOCK 2'b00
 `define DEAD_TETRIMINO_BLOCK 2'b01

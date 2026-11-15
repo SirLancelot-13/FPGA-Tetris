@@ -62,7 +62,7 @@ always @(posedge game_clk) begin
                 end
             end
             
-            changed_game_state <= `SPAWN_STATE;
+            changed_game_state <= `CLEAR_STATE;
         end
 
         for (i = 0; i < `BOARD_HEIGHT; i = i + 1) begin
