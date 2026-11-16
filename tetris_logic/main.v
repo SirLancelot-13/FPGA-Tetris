@@ -3,11 +3,11 @@
 `include "constants.vh"
 
 module main(
-    input wkey, akey, skey, dkey, clk,
-    output out
+    input [4:0] pb, input clk,
+    output usb_uart_txd
 );
 
-wire game_clk;
+wire game_clk, wkey = pb[0], skey = pb[1], akey = pb[2], dkey = pb[3];
 
 // Board state
 reg [2*`BOARD_HEIGHT*`BOARD_WIDTH-1:0] grid = `EMPTY_BLOCK;
@@ -110,8 +110,8 @@ line_clear line_clear (
 wire tx_start, tx_done;
 wire [7:0] tx_data;
 
-packetizer packetizer (.clk(clk), .game_over(game_state == `GAMEOVER_STATE), .score(score), .grid(grid), .tx_line(out), .tx_done(tx_done), .tx_start(tx_start), .tx_data(tx_data));
-uart_tx uart_tx (.clk(clk), .tx_start(tx_start), .tx_data(tx_data), .tx_line(out), .tx_done(tx_done));
+packetizer packetizer (.clk(clk), .game_over(game_state == `GAMEOVER_STATE), .score(score), .grid(grid), .tx_line(usb_uart_txd), .tx_done(tx_done), .tx_start(tx_start), .tx_data(tx_data));
+uart_tx uart_tx (.clk(clk), .tx_start(tx_start), .tx_data(tx_data), .tx_line(usb_uart_txd), .tx_done(tx_done));
 
 // Main owns the state, it takes the module outputs once after each game_clk edge
 always @(posedge clk) begin
@@ -136,7 +136,7 @@ always @(posedge clk) begin
             grid <= cl_grid; game_state <= cl_game_state; score <= cl_score;
         end
         default : begin
-            
+
         end
     endcase
 end
