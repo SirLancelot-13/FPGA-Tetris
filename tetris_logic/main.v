@@ -88,7 +88,7 @@ move_tetrimino_down move_tetrimino_down (
 );
 
 move_tetrimino_sideways move_tetrimino_sideways (
-	.dx              (dkey-akey),
+	.dx              (dkey-akey+0),
 	.in_central_x_x2 (cx2),
 	.in_central_y_x2 (cy2),
 	.input_grid      (grid),
