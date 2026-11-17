@@ -119,7 +119,7 @@ always @(posedge clk) begin
     rot_pulse <= wkey;
     dn_pulse <= skey;
     sd_pulse <= dkey ^ akey;
-    if (wkey == ~rot_pulse && wkey == 1) begin
+    if (pb[4]) {grid,game_state,score} <= 0; else if (wkey == ~rot_pulse && wkey == 1) begin
         grid <= rot_grid;
     end else if (skey == ~dn_pulse && skey == 1) begin
         grid <= dn_grid; cx2 <= dn_cx2; cy2 <= dn_cy2;

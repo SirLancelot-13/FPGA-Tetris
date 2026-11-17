@@ -218,6 +218,13 @@ initial begin
     check(c == 99_000_000, "a game-over packet with the final score was transmitted");
     check(e === dut.grid, "game-over packet carries the final board");
 
+    // ---- reset button (centre) restarts the game after game over -------------
+    pb[4] = 1; repeat (3) @(posedge clk); #1;
+    check(dut.game_state === `SPAWN_STATE && dut.score === 16'd0 && dut.grid === 0, "centre button resets state, score and board");
+    pb[4] = 0;
+    wait_state(`MOVE_STATE, 20*HALF*2);
+    check(countc(dut.grid, A) == 4, "a new piece spawns after reset");
+
     finish_test("main");
 end
 
