@@ -1,5 +1,5 @@
 module uart_tx #(
-    parameter CLKS_PER_BIT = 67 //Initialize this to a value according to the FPGA board itself
+    parameter CLKS_PER_BIT = 434 //Initialize this to a value according to the FPGA board itself
 ) (
     input wire clk,
     input wire tx_start,
@@ -29,7 +29,7 @@ always @(posedge clk) begin
     case(state)
         IDLE: begin
             tx_line = 1;
-            tx_done = 0;
+            tx_done <= 0;
             clk_count = 0;
             bit_index = 0;
             if (tx_start) begin
@@ -66,12 +66,12 @@ always @(posedge clk) begin
                 clk_count = clk_count + 1;
             else begin
                 clk_count = 0;
-                tx_done = 1;
+                tx_done <= 1;
                 state = CLEANUP;
             end
         end
         CLEANUP: begin
-            tx_done = 1'b0;
+            tx_done <= 1'b0;
             state = IDLE;
         end
     endcase

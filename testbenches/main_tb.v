@@ -10,7 +10,7 @@ module main_tb;
 
 localparam HALF = 100;       // forced game_clk half period in clocks
 localparam T = 20;           // 50 MHz
-localparam CPB = 67;         // uart_tx default
+localparam CPB = 434;        // uart_tx default (50 MHz / 115200)
 localparam PKT = 37;
 
 reg clk = 0;

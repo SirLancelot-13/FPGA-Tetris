@@ -31,4 +31,4 @@ Build output goes to `build/` (git-ignored). `gtkwave` is in the devenv if you w
 ## Simulator notes
 
 - `main.v` has `wire game_clk, wkey = pb[0], ...`, which Icarus rejects; `run_all.sh` compiles a patched copy from `build/`.
-- `uart_tx` drives `tx_done` with blocking assignments, so in simulation the packetizer can miss the pulse and hang (hardware is fine). `packetizer_tb` retimes it; `main_tb` compiles a copy with a nonblocking `tx_done`. Changing `tx_done = ...` to `tx_done <= ...` in `uart_tx.v` would make both workarounds unnecessary.
+- `packetizer_tb` still re-times `tx_done` on the falling edge; this is no longer needed now that `uart_tx` uses a nonblocking `tx_done`, but it is harmless.

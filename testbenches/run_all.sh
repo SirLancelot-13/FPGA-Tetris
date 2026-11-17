@@ -23,7 +23,7 @@ declare -A SRC=(
     [move_tetrimino_sideways]="$LOGIC/move_tetrimino/move_tetrimino_sideways.v"
     [rotate_tetrimino]="$LOGIC/move_tetrimino/rotate_tetrimino.v"
     [line_clear]="$LOGIC/line_clear.v"
-    [main]="$BUILD/main_iverilog.v $LOGIC/clock_gen.v $LOGIC/line_clear.v $LOGIC/packetizer.v $LOGIC/spawn_tetrimino/spawn_tetrimino.v $LOGIC/spawn_tetrimino/lfsr.v $LOGIC/move_tetrimino/tetrimino_gravity.v $LOGIC/move_tetrimino/move_tetrimino_down.v $LOGIC/move_tetrimino/move_tetrimino_sideways.v $LOGIC/move_tetrimino/rotate_tetrimino.v $BUILD/uart_tx_iverilog.v"
+    [main]="$BUILD/main_iverilog.v $LOGIC/clock_gen.v $LOGIC/line_clear.v $LOGIC/packetizer.v $LOGIC/spawn_tetrimino/spawn_tetrimino.v $LOGIC/spawn_tetrimino/lfsr.v $LOGIC/move_tetrimino/tetrimino_gravity.v $LOGIC/move_tetrimino/move_tetrimino_down.v $LOGIC/move_tetrimino/move_tetrimino_sideways.v $LOGIC/move_tetrimino/rotate_tetrimino.v $ROOT/uart_proto/uart_tx.v"
 )
 ORDER=(uart_tx uart_rx uart_loopback packetizer clock_gen lfsr spawn_tetrimino \
        tetrimino_gravity move_tetrimino_down move_tetrimino_sideways rotate_tetrimino line_clear main)
@@ -32,13 +32,6 @@ ORDER=(uart_tx uart_rx uart_loopback packetizer clock_gen lfsr spawn_tetrimino \
 #   wire game_clk, wkey = pb[0], ...
 # which other tools accept. Compile a patched copy of main.v rather than touch the design.
 sed 's/^wire game_clk, wkey = /wire game_clk; wire wkey = /' "$LOGIC/main.v" > "$BUILD/main_iverilog.v"
-
-# uart_tx drives tx_done with blocking assignments, so whether the packetizer sees that
-# one-clock pulse depends on the simulator's evaluation order and it can hang waiting
-# for it (in hardware it is a flop and works). For the full-system `main` bench only,
-# compile a copy with a nonblocking tx_done. packetizer_tb uses the unmodified file and
-# retimes tx_done itself.
-sed 's/tx_done = /tx_done <= /' "$ROOT/uart_proto/uart_tx.v" > "$BUILD/uart_tx_iverilog.v"
 
 names=("$@")
 [ ${#names[@]} -eq 0 ] && names=("${ORDER[@]}")
