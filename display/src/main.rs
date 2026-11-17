@@ -147,9 +147,13 @@ fn draw(f: &mut Frame, g: &GameState, live: bool, best: Option<i64>) {
         Layout::horizontal([Constraint::Length(BW), Constraint::Length(1), Constraint::Length(SIDE_W)])
             .areas(area.centered(Constraint::Length(BW + 1 + SIDE_W), Constraint::Length(BH)))
     } else { [area.centered(Constraint::Length(BW), Constraint::Length(BH)), Rect::ZERO, Rect::ZERO] };
-    let board = Block::bordered().border_type(BorderType::Rounded)
+    let mut board = Block::bordered().border_type(BorderType::Rounded)
         .border_style(Style::new().fg(if g.game_over { Color::Red } else { Color::Blue }))
         .title(Line::from(" TETRIS ").bold().centered());
+    if !wide {
+        let s = if !live { " waiting... ".into() } else if g.game_over { format!(" {} OVER ", g.score) } else { format!(" {} ", g.score) };
+        board = board.title_bottom(Line::from(s).bold().centered());
+    }
     f.render_widget(Paragraph::new(board_lines(&g.board_state)).block(board), board_area);
     if wide {
         let side = Block::bordered().border_type(BorderType::Rounded).border_style(Style::new().dark_gray()).title(" INFO ");
