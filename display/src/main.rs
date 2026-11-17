@@ -1,8 +1,10 @@
 /* We'll be considering the signal from the board as <Magic Bytes><Game Over?><Score><Board State><Checksum for validating the packet> */
 use ratatui::{
-    layout::Constraint,
-    style::{Color, Style},
-    widgets::{Cell, Row, Table},
+    Frame,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Paragraph},
 };
 
 use std::{
@@ -13,14 +15,7 @@ use std::{
     time::Duration,
 };
 
-use ratatui::crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{
-        disable_raw_mode, enable_raw_mode,
-        EnterAlternateScreen, LeaveAlternateScreen,
-    },
-};
+use ratatui::crossterm::event::{self, Event, KeyCode};
 
 #[derive(Clone, Copy)]
 struct GameState {
@@ -101,30 +96,69 @@ impl Packet {
 
 
 
-fn render_board(board: &[u8; 120]) -> Table<'static> {
-    let temp_board = board;
-    let rows = (0..12).map(|y| {
-        let cells = (0..10).map(|x| {
-            let occupied = temp_board[(11 - y) * 10 + x] != 0;
+const BW: u16 = BOARD_WIDTH as u16 * 2 + 2;
+const BH: u16 = BOARD_HEIGHT as u16 + 2;
+const SIDE_W: u16 = 24;
 
-            if occupied {
-                Cell::from("  ").style(
-                    Style::default().bg(Color::Cyan)
-                )
-            } else {
-                Cell::from("  ").style(
-                    Style::default().fg(Color::DarkGray)
-                )
-            }
-        });
+fn board_lines(board: &[u8; 120]) -> Vec<Line<'static>> {
+    let (w, h) = (BOARD_WIDTH as usize, BOARD_HEIGHT as usize);
+    (0..h).map(|y| {
+        let row = h - 1 - y;
+        let spawn = row >= h - 2;
+        Line::from((0..w).map(|x| match board[row * w + x] {
+            2 => Span::styled("  ", Style::new().bg(Color::Yellow)),
+            1 => Span::styled("  ", Style::new().bg(Color::Cyan)),
+            _ if spawn => Span::styled(" ·", Style::new().fg(Color::DarkGray).bg(Color::Indexed(236))),
+            _ => Span::styled(" ·", Style::new().fg(Color::DarkGray)),
+        }).collect::<Vec<_>>())
+    }).collect()
+}
 
-        Row::new(cells)
-    });
+fn side_lines(g: &GameState, live: bool, best: Option<i64>) -> Vec<Line<'static>> {
+    let status = match (live, g.game_over) {
+        (false, _) => Span::styled("WAITING FOR BOARD...", Style::new().fg(Color::Yellow).add_modifier(Modifier::SLOW_BLINK)),
+        (true, true) => Span::styled("GAME OVER", Style::new().fg(Color::Red).bold()),
+        (true, false) => Span::styled("PLAYING", Style::new().fg(Color::Green).bold()),
+    };
+    let key = |k: &'static str, d: &'static str| Line::from(vec![Span::styled(k, Style::new().fg(Color::Cyan).bold()), Span::raw(d).dark_gray()]);
+    vec![
+        Line::from("SCORE").dark_gray(),
+        Line::from(if live { g.score.to_string() } else { "-".into() }).fg(Color::Yellow).bold(),
+        Line::from(vec![Span::raw("BEST ").dark_gray(), Span::raw(best.map_or("-".into(), |b| b.to_string())).fg(Color::Magenta).bold()]),
+        Line::from(""),
+        Line::from(status),
+        Line::from(""),
+        key("W       ", "rotate"),
+        key("A / D   ", "move"),
+        key("S       ", "drop"),
+        key("centre  ", "reset"),
+        key("q       ", "quit"),
+    ]
+}
 
-    let widths = vec![ratatui::layout::Constraint::Length(2); 10];
+fn draw(f: &mut Frame, g: &GameState, live: bool, best: Option<i64>) {
+    let area = f.area();
+    if area.width < BW || area.height < BH {
+        f.render_widget(Paragraph::new("terminal too small").red().centered(), area.centered_vertically(Constraint::Length(1)));
+        return;
+    }
+    let wide = area.width > BW + SIDE_W;
+    let [board_area, _, side_area] = if wide {
+        Layout::horizontal([Constraint::Length(BW), Constraint::Length(1), Constraint::Length(SIDE_W)])
+            .areas(area.centered(Constraint::Length(BW + 1 + SIDE_W), Constraint::Length(BH)))
+    } else { [area.centered(Constraint::Length(BW), Constraint::Length(BH)), Rect::ZERO, Rect::ZERO] };
+    let board = Block::bordered().border_type(BorderType::Rounded)
+        .border_style(Style::new().fg(if g.game_over { Color::Red } else { Color::Blue }))
+        .title(Line::from(" TETRIS ").bold().centered());
+    f.render_widget(Paragraph::new(board_lines(&g.board_state)).block(board), board_area);
+    if wide {
+        let side = Block::bordered().border_type(BorderType::Rounded).border_style(Style::new().dark_gray()).title(" INFO ");
+        f.render_widget(Paragraph::new(side_lines(g, live, best)).block(side), side_area);
+    }
+}
 
-    Table::new(rows, widths)
-        .style(Style::default().bg(Color::Black))
+fn best_score(db: &rusqlite::Connection) -> Option<i64> {
+    db.query_row("SELECT MAX(score) FROM scores", [], |r| r.get::<_, Option<i64>>(0)).ok().flatten()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -156,17 +190,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
     let mut t = ratatui::init();
     let mut g = GameState::new();
+    let mut live = false;
+    let mut best = best_score(&db);
     loop {
         while let Ok(m) = rx.try_recv() {
             match m {
                 Ok(n) => {
-                    if n.game_over && !g.game_over { db.execute("INSERT INTO scores (score) VALUES (?1)", [n.score]).unwrap(); }
+                    if n.game_over && !g.game_over { db.execute("INSERT INTO scores (score) VALUES (?1)", [n.score]).unwrap(); best = best_score(&db); }
                     g = n;
+                    live = true;
                 }
                 Err(e) => { ratatui::restore(); return Err(e.into()) }
             }
         }
-        t.draw(|f| f.render_widget(render_board(&g.board_state), f.area())).ok();
+        t.draw(|f| draw(f, &g, live, best)).ok();
         if event::poll(Duration::from_millis(50))? {
             if let Event::Key(k) = event::read()? {
                 if k.code == KeyCode::Char('q') { break }
