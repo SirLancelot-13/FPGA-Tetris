@@ -19,7 +19,7 @@ always #(T/2) clk = ~clk;
 reg [4:0] pb = 0;            // pb[0]=w rotate, pb[1]=s down, pb[2]=a left, pb[3]=d right
 wire txd;
 
-main dut (.pb(pb), .clk(clk), .usb_uart_txd(txd));
+main #(.DEBOUNCE(1)) dut (.pb(pb), .clk(clk), .usb_uart_txd(txd)); // Real debounce is 10 ms, far too long here
 
 initial force dut.clock_gen_inst.half_period = HALF;
 
@@ -80,7 +80,7 @@ begin
     pb[bit_idx] = 1;
     repeat (hold_clks) @(posedge clk);
     pb[bit_idx] = 0;
-    repeat (4) @(posedge clk);
+    repeat (8) @(posedge clk);
 end
 endtask
 
@@ -151,6 +151,11 @@ initial begin
     press(3, 5);
     press(3, 5);
     check(mincol(dut.grid) == col0 + 1, "'d' pressed twice moves the piece two columns right");
+    // A bouncing press (toggling faster than the debounce) still counts once
+    col0 = mincol(dut.grid);
+    repeat (6) begin pb[3] = 1; @(posedge clk); pb[3] = 0; @(posedge clk); end
+    press(3, 5);
+    check(mincol(dut.grid) == col0 + 1, "a bouncing 'd' press moves the piece exactly one column");
     // Down
     after_tick;
     g0 = dut.grid;
@@ -160,7 +165,7 @@ initial begin
     // Both left and right at once cancel
     after_tick;
     g0 = dut.grid;
-    pb[2] = 1; pb[3] = 1; repeat (10) @(posedge clk); pb[2] = 0; pb[3] = 0; repeat (4) @(posedge clk);
+    pb[2] = 1; pb[3] = 1; repeat (10) @(posedge clk); pb[2] = 0; pb[3] = 0; repeat (8) @(posedge clk);
     check(mincol(dut.grid) === mincol(g0) || mincol(dut.grid) === mincol(g0) - 1 || mincol(dut.grid) === mincol(g0) + 1,
           "pressing both sideways keys leaves a sane piece");
     check(countc(dut.grid, A) == 4, "piece still intact after both sideways keys");
